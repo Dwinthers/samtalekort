@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Familie-Fokus</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #FDFCF0;
+            --text-dark: #2C2C2C;
+            --accent-red: #B04A43;
+            --accent-blue: #4A6D81;
+            --accent-green: #6B8E6B;
+            --accent-orange: #D98C52;
+            --card-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .nav-header {
+            position: fixed;
+            top: 20px;
+            width: 90%;
+            max-width: 400px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        select {
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid #DDD;
+            background: white;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .card-container {
+            width: 340px;
+            height: 480px;
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 45px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-top: 15px solid var(--accent-red);
+        }
+
+        .category-tag {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: #AAA;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .question-text {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 1.6rem;
+            line-height: 1.5;
+            color: var(--text-dark);
+        }
+
+        .card-footer {
+            position: absolute;
+            bottom: 30px;
+            font-size: 0.75rem;
+            color: #DDD;
+            font-weight: 600;
+        }
+
+        .controls {
+            margin-top: 40px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            background: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .btn-main {
+            width: auto;
+            padding: 0 35px;
+            border-radius: 50px;
+            background: var(--text-dark);
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .btn:active { transform: scale(0.92); }
+
+        .status {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #CCC;
+            font-weight: 600;
+        }
+
+        /* Farve-temaer */
+        .theme-red { border-top-color: var(--accent-red); }
+        .theme-blue { border-top-color: var(--accent-blue); }
+        .theme-green { border-top-color: var(--accent-green); }
+        .theme-orange { border-top-color: var(--accent-orange); }
+
+    </style>
+</head>
+<body>
+
+    <div class="nav-header">
+        <select id="catFilter" onchange="resetAndFilter()">
+            <option value="all">Alle Temaer</option>
+            <option value="Refleksion">Refleksion</option>
+            <option value="Drømme">Drømme</option>
+            <option value="Relationer">Relationer</option>
+            <option value="Hverdag">Hverdag</option>
+        </select>
+        <div style="font-weight: 700; font-size: 0.75rem; color: #DDD;">GOTTMAN STYLE</div>
+    </div>
+
+    <div class="card-container">
+        <div class="card" id="card">
+            <div class="category-tag" id="displayCat">Klar?</div>
+            <div class="question-text" id="displayText">Tryk på knappen for at starte jeres Family Hour</div>
+            <div class="card-footer" id="displayID">#START</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="prev()">←</button>
+        <button class="btn btn-main" onclick="shuffle()">Bland & Træk</button>
+        <button class="btn" onclick="next()">→</button>
+    </div>
+
+    <div class="status" id="status">Kort 0 af 240</div>
+
+    <script>
+        // Fuld database udtrukket og oversat
+        const allQuestions = [
+          { id: 61, cat: 'Refleksion', title: 'Spol tiden tilbage', theme: 'theme-blue', text: 'Hvad er noget, du ville ønske, du kunne opleve igen for allerførste gang?' },
+            { id: 62, cat: 'Drømme', title: 'Ønsketænkning', theme: 'theme-orange', text: 'Hvad er noget, du ønsker dig, men som du ved, du aldrig får?' },
+            { id: 63, cat: 'Refleksion', title: 'Gode ar', theme: 'theme-green', text: 'Nævn en svær, men vigtig lektie, som livet har lært dig.' },
+            { id: 64, cat: 'Relationer', title: 'Livet med andre', theme: 'theme-blue', text: 'Hvad er svært for dig, som er nemt for andre?' },
+            { id: 65, cat: 'Refleksion', title: 'Super-dig', theme: 'theme-red', text: 'Hvornår føler du dig som den allerbedste version af dig selv?' },
+            { id: 66, cat: 'Refleksion', title: 'Kontroversielt', theme: 'theme-orange', text: 'Hvad er din mest kontroversielle holdning?' },
+            { id: 67, cat: 'Refleksion', title: 'Dyb refleksion', theme: 'theme-blue', text: 'Hvilken bog, film eller spil har ændret din måde at se verden på?' },
+            { id: 68, cat: 'Relationer', title: 'En som mig', theme: 'theme-blue', text: 'Hvilken fiktiv karakter minder du mest om?' },
+            { id: 69, cat: 'Relationer', title: 'Beundring', theme: 'theme-green', text: 'Hvilket erhverv beundrer du, men ville aldrig selv kunne bestride?' },
+            { id: 70, cat: 'Refleksion', title: 'Halvt tomt', theme: 'theme-red', text: 'Hvordan bliver tingene værre?' },
+            { id: 71, cat: 'Refleksion', title: 'Halvt fuldt', theme: 'theme-green', text: 'Hvordan bliver tingene bedre?' },
+            { id: 72, cat: 'Relationer', title: 'Nemesis', theme: 'theme-red', text: 'Hvem er din "nemesis", og hvorfor?' },
+            { id: 73, cat: 'Refleksion', title: 'Shaq', theme: 'theme-blue', text: 'Hvem ser du mest op til, og hvorfor?' },
+            { id: 74, cat: 'Drømme', title: 'Ulønnet arbejde', theme: 'theme-orange', text: 'Hvilket job ville du vælge, hvis penge ikke var et tema?' },
+            { id: 75, cat: 'Hverdag', title: 'TV-top 5', theme: 'theme-green', text: 'Hvad er dine top 5 TV-serier?' },
+            { id: 76, cat: 'Relationer', title: 'Genfortælling', theme: 'theme-blue', text: 'Hvilken historie har du fortalt flest gange?' },
+            { id: 77, cat: 'Hverdag', title: '0 til 100', theme: 'theme-red', text: 'Hvad er den hurtigste måde at gøre dig sur på?' },
+            { id: 78, cat: 'Hverdag', title: 'Woah', theme: 'theme-green', text: 'Hvad har du lært i denne uge, som du aldrig vil glemme?' },
+            { id: 79, cat: 'Hverdag', title: 'Haters gonna hate', theme: 'theme-red', text: 'Hvad er dit absolutte hade-ord?' },
+            { id: 80, cat: 'Hverdag', title: 'Små fordele', theme: 'theme-blue', text: 'Hvad er den mest ubrugelige evne, du besidder?' },
+            { id: 81, cat: 'Hverdag', title: 'Fødselsdage', theme: 'theme-orange', text: 'Hvad er den bedste måde at tilbringe en fødselsdag på?' },
+            { id: 82, cat: 'Refleksion', title: 'Fastlåst', theme: 'theme-blue', text: 'Hvad er et nøgle-minde, der har haft betydning for din personlighed?' },
+            { id: 83, cat: 'Refleksion', title: 'Yolo', theme: 'theme-red', text: 'Hvilken én sætning om hvordan man bør leve, hænger mest ved dig?' },
+            { id: 84, cat: 'Hverdag', title: 'Ups', theme: 'theme-green', text: 'Hvilken stor fejl viste sig faktisk at ende helt fint?' },
+            { id: 85, cat: 'Relationer', title: 'Klar til kamp', theme: 'theme-red', text: 'Hvad er det største skænderi, du har været i, og hvad startede det?' },
+            { id: 86, cat: 'Drømme', title: 'Fugle', theme: 'theme-orange', text: 'Hvad ved du ikke findes i virkeligheden, men som du inderligt ønsker fandtes?' },
+            { id: 87, cat: 'Refleksion', title: 'Mærkeligt', theme: 'theme-blue', text: 'Hvad er noget, der bliver mærkeligere, jo mere man tænker over det?' },
+            { id: 88, cat: 'Hverdag', title: 'Dumt køb', theme: 'theme-orange', text: 'Hvad er det dummeste, du nogensinde har købt?' },
+            { id: 89, cat: 'Refleksion', title: 'Bogen om dig', theme: 'theme-blue', text: 'Hvad skulle titlen på din selvbiografi være?' },
+            { id: 90, cat: 'Hverdag', title: 'Forudsigelse', theme: 'theme-green', text: 'Hvad har du forudsagt ville ske, som faktisk skete?' },
+            { id: 91, cat: 'Refleksion', title: 'Livs-sætning', theme: 'theme-red', text: 'Hvordan ville du opsummere dit liv indtil nu i én sætning?' },
+            { id: 92, cat: 'Relationer', title: '5 stjerner', theme: 'theme-blue', text: 'Hvem er det bedste menneske, du nogensinde har mødt, og hvorfor?' },
+            { id: 93, cat: 'Refleksion', title: 'Nu?', theme: 'theme-blue', text: 'Hvilket spørgsmål ville du allerhelst have svar på?' },
+            { id: 94, cat: 'Refleksion', title: 'Et year tilbage', theme: 'theme-red', text: 'Hvis du havde ét år tilbage at leve i, hvordan ville du så bruge det?' },
+            { id: 95, cat: 'Udfordringer', title: 'Kage eller død?', theme: 'theme-red', text: 'Hvad er den sværeste beslutning, du nogensinde har truffet?' },
+            { id: 96, cat: 'Udfordringer', title: 'Samfundet', theme: 'theme-orange', text: 'Hvad er der galt med samfundet i dag?' },
+            { id: 97, cat: 'Hverdag', title: 'Yndlingsord', theme: 'theme-green', text: 'Hvad er dit yndlingsord?' },
+            { id: 98, cat: 'Hverdag', title: 'Dårlig til noget', theme: 'theme-blue', text: 'Hvad er du virkelig dårlig til, og tror du, du bliver bedre en dag?' },
+            { id: 99, cat: 'Refleksion', title: 'Hykleri', theme: 'theme-red', text: 'Hvad er du hyklerisk omkring?' },
+            { id: 100, cat: 'Refleksion', title: 'Tårer', theme: 'theme-blue', text: 'Har du nogensinde grædt offentligt, og hvorfor?' },
+            { id: 101, cat: 'Hverdag', title: 'Smil', theme: 'theme-green', text: 'Hvad får dig altid til at smile?' },
+            { id: 102, cat: 'Refleksion', title: 'Savn', theme: 'theme-red', text: 'Hvem ville du ønske stadig var i live?' },
+            { id: 103, cat: 'Hverdag', title: 'Uvurderligt', theme: 'theme-orange', text: 'Hvilken dyr ting er definitivt pengene værd?' },
+            { id: 104, cat: 'Refleksion', title: 'Ikke glemt', theme: 'theme-blue', text: 'Hvad værdsætter du meget mere nu, hvor det er væk?' },
+            { id: 105, cat: 'Hverdag', title: 'Voksenlivet', theme: 'theme-orange', text: 'Hvad ville du virkelig gerne have, som viste sig at være overvurderet?' },
+            { id: 106, cat: 'Hverdag', title: 'Lugtesans', theme: 'theme-green', text: 'Hvis du øjeblikkeligt kunne firdoble din lugtesans, ville du så gøre det?' },
+            { id: 107, cat: 'Hverdag', title: 'Banke-banke på', theme: 'theme-orange', text: 'Hvad er din yndlingsvittighed?' },
+            { id: 108, cat: 'Relationer', title: 'Gaven', theme: 'theme-blue', text: 'Hvad er den bedste gave, du nogensinde har fået?' },
+            { id: 109, cat: 'Hverdag', title: 'Stolthed', theme: 'theme-green', text: 'Hvad har du skabt, som du er mest stolt af?' },
+            { id: 110, cat: 'Hverdag', title: 'Hade-ting', theme: 'theme-red', text: 'Hvad hader du, som de fleste andre godt kan lide?' },
+            { id: 111, cat: 'Hverdag', title: 'Yndlings-ting', theme: 'theme-green', text: 'Hvad elsker du, som de fleste andre ikke bryder sig om?' },
+            { id: 112, cat: 'Relationer', title: 'Forældre', theme: 'theme-blue', text: 'Hvordan adskiller du dig fra dine forældre?' },
+            { id: 113, cat: 'Hverdag', title: 'Irrationelt had', theme: 'theme-red', text: 'Hvad hader du virkelig meget, uden at have en god grund til det?' },
+            { id: 114, cat: 'Relationer', title: 'Beundring', theme: 'theme-blue', text: 'Hvilken kendis beundrer du mest?' },
+            { id: 115, cat: 'Hverdag', title: 'Vildt og skørt', theme: 'theme-red', text: 'Hvad er det skøreste, du nogensinde har gjort?' },
+            { id: 116, cat: 'Hverdag', title: 'Yndlings-genstand', theme: 'theme-green', text: 'Hvad er din yndlingsting?' },
+            { id: 117, cat: 'Hverdag', title: 'Stereotyper', theme: 'theme-blue', text: 'Passer du ind i en stereotype?' },
+            { id: 118, cat: 'Hverdag', title: 'Små glæder', theme: 'theme-green', text: 'Hvilken lille, ubetydelig ting giver dig glæde?' },
+            { id: 119, cat: 'Hverdag', title: 'Den bedste dag', theme: 'theme-blue', text: 'Hvad var den bedste dag i dit liv?' },
+            { id: 120, cat: 'Hverdag', title: 'Hemmelig vane', theme: 'theme-red', text: 'Hvilken mærkelig ting gør du, som ingen lægger mærke til?' },
+            { id: 121, cat: 'Relationer', title: 'Tilgivelse', theme: 'theme-blue', text: 'Hvad kan du tilgive, men aldrig glemme?' },
+            { id: 122, cat: 'Relationer', title: 'Respekt', theme: 'theme-green', text: 'Hvilket karaktertræk får dig til øjeblikkeligt at respektere et menneske?' },
+            { id: 123, cat: 'Relationer', title: 'Kompliment', theme: 'theme-red', text: 'Hvad er det bedste kompliment, du nogensinde har fået?' },
+            { id: 124, cat: 'Hverdag', title: 'Fest-energi', theme: 'theme-blue', text: 'To timer inde i en sjov fest, har du så fået mere energi eller er du udmattet? Hvorfor?' },
+            { id: 125, cat: 'Hverdag', title: 'Internettet', theme: 'theme-orange', text: 'Hvad er det sjoveste, du har set på internettet for nylig?' },
+            { id: 126, cat: 'Udfordringer', title: 'Forsvar det umulige', theme: 'theme-red', text: 'Tænk på noget, du tror stærkt på. Lad som om du har den modsatte holdning og argumentér for den i 2 minutter.' },
+            { id: 127, cat: 'Hverdag', title: 'Bedste dag', theme: 'theme-blue', text: 'Beskriv det første, der falder dig ind, når du tænker på din bedste dag.' },
+            { id: 128, cat: 'Refleksion', title: 'Mareridt', theme: 'theme-red', text: 'Hvad er dit mest livagtige mareridt? Fortæller det noget om dig?' },
+            { id: 129, cat: 'Refleksion', title: 'Mig selv', theme: 'theme-blue', text: 'Hvad er nemt for dig, men svært for andre?' },
+            { id: 130, cat: 'Relationer', title: 'Venskab', theme: 'theme-blue', text: 'Hvad er den vigtigste egenskab, du leder efter hos en ven?' },
+            { id: 131, cat: 'Hverdag', title: 'Teknologi', theme: 'theme-orange', text: 'Hvilken videnskabelig eller teknologisk opdagelse blæser dit sind?' },
+            { id: 132, cat: 'Refleksion', title: 'Citat', theme: 'theme-green', text: 'Hvad er dit yndlingscitat?' },
+            { id: 133, cat: 'Refleksion', title: 'Skatter eller timeout?', theme: 'theme-blue', text: 'Er det bedre at være voksen eller barn?' },
+            { id: 134, cat: 'Hverdag', title: 'Dårlig film', theme: 'theme-orange', text: 'Nævn den dårligste film, du nogensinde har set. Hvad var særligt dårligt?' },
+            { id: 135, cat: 'Refleksion', title: 'Alarmerende', theme: 'theme-blue', text: 'Hvad ville være det mest skræmmende, Gud kunne fortælle alle?' },
+            { id: 136, cat: 'Refleksion', title: 'Social accept', theme: 'theme-red', text: 'Hvad er noget, du ville ønske var socialt acceptabelt?' },
+            { id: 137, cat: 'Udfordringer', title: 'Mulighed', theme: 'theme-red', text: 'Hvilken mulighed har du takket nej til? Hvorfor?' },
+            { id: 138, cat: 'Hverdag', title: 'Lange minutter', theme: 'theme-blue', text: 'Hvad var de længste 5 minutter i denne uge?' },
+            { id: 139, cat: 'Relationer', title: 'Førstehåndsindtryk', theme: 'theme-red', text: 'Hvad får dig øjeblikkeligt til at tænke mindre om et menneske?' },
+            { id: 140, cat: 'Drømme', title: 'Bolig', theme: 'theme-blue', text: 'Hvor på planeten ville du bo, hvis penge ikke betød noget?' },
+            { id: 141, cat: 'Refleksion', title: 'Udseende', theme: 'theme-red', text: 'Hvad antager folk om dig pga. dit udseende? Har de ret eller tager de fejl?' },
+            { id: 142, cat: 'Refleksion', title: 'Døden', theme: 'theme-blue', text: 'Hvordan ville du foretrække at dø? Og hvornår?' },
+            { id: 143, cat: 'Refleksion', title: 'Lige meget', theme: 'theme-orange', text: 'Hvad burde folk gå meget mindre op i?' },
+            { id: 144, cat: 'Hverdag', title: 'Irriterende vending', theme: 'theme-blue', text: 'Hvilken irriterende vending eller ord burde bare forsvinde?' },
+            { id: 145, cat: 'Refleksion', title: 'Efter døden', theme: 'theme-red', text: 'Hvad tror du der sker efter vi dør?' },
+            { id: 146, cat: 'Refleksion', title: 'Identitet', theme: 'theme-blue', text: 'Hvilken genstand definerer bedst din identitet?' },
+            { id: 147, cat: 'Refleksion', title: 'Har været sjovt', theme: 'theme-red', text: 'Hvad elskede du at gøre, men ville aldrig gøre igen?' },
+            { id: 148, cat: 'Refleksion', title: 'Lange minutter', theme: 'theme-blue', text: 'Hvad var de længste 5 minutter i dit liv?' },
+            { id: 149, cat: 'Hverdag', title: 'Husketeknik', theme: 'theme-orange', text: 'Kan du stadig citere den længste ting, du nogensinde har lært udenad?' },
+            { id: 150, cat: 'Refleksion', title: 'Skæbne', theme: 'theme-blue', text: 'Tror du på skæbnen? Eller er alt bare kaos?' },
+            { id: 151, cat: 'Hverdag', title: 'Garanteret grin', theme: 'theme-red', text: 'Hvad er altid sjovt?' },
+            { id: 152, cat: 'Relationer', title: 'Familie', theme: 'theme-blue', text: 'Ville du ønske, du var mere involveret med din fjerne familie? Hvorfor?' },
+            { id: 153, cat: 'Refleksion', title: 'Forandring', theme: 'theme-blue', text: 'Hvad har ændret sig mest ved dig de sidste to år?' },
+            { id: 154, cat: 'Refleksion', title: 'Forudseenhed', theme: 'theme-red', text: 'Nævn et eksempel, hvor du så det komme, men ikke gjorde noget for at forhindre det.' },
+            { id: 155, cat: 'Refleksion', title: 'Bedrift', theme: 'theme-blue', text: 'Hvad er din største bedrift?' },
+            { id: 156, cat: 'Refleksion', title: 'Sidste time', theme: 'theme-blue', text: 'Hvis du skulle dø om en time, hvad tror du så, du ville tænke mest på?' },
+            { id: 157, cat: 'Refleksion', title: 'Begrundet frygt', theme: 'theme-red', text: 'Hvilken frygt har du, som er fuldstændig berettiget?' },
+            { id: 158, cat: 'Refleksion', title: 'Lykke', theme: 'theme-red', text: 'Jager du lige nu det, der gør dig lykkelig? Hvorfor eller hvorfor ikke?' },
+            { id: 159, cat: 'Refleksion', title: 'Ikke sjovt', theme: 'theme-red', text: 'Hvad er efter din mening for seriøst til at lave sjov med?' },
+            { id: 160, cat: 'Relationer', title: 'Sladder', theme: 'theme-blue', text: 'Hvem var den sidste person, du talte med (som ikke er i rummet)? Hvad talte I om?' },
+            { id: 161, cat: 'Refleksion', title: 'Mandag', theme: 'theme-blue', text: 'Hvad var den værste dag i dit liv?' },
+            { id: 162, cat: 'Refleksion', title: 'Taknemmelighed', theme: 'theme-blue', text: 'Hvis du kunne sende et takkekort til hvem som helst i verden, hvem skulle det så være? Hvorfor?' },
+            { id: 163, cat: 'Hverdag', title: 'Det perfekte måltid', theme: 'theme-green', text: 'Beskriv dit perfekte måltid. Hvad er det, og hvor spiser du det?' },
+            { id: 164, cat: 'Refleksion', title: 'Stolthed', theme: 'theme-blue', text: 'Hvad er du stolt over, at du *ikke* har gjort?' },
+            { id: 165, cat: 'Refleksion', title: 'Giv op', theme: 'theme-blue', text: 'Hvad er noget, du aldrig troede du kunne, indtil du faktisk gjorde det?' },
+            { id: 166, cat: 'Refleksion', title: 'Dette her', theme: 'theme-blue', text: 'Hvilket spørgsmål elsker du at svare på?' },
+            { id: 167, cat: 'Refleksion', title: 'Alt bliver bedre', theme: 'theme-blue', text: 'Hvis du kunne løse ét stort verdensproblem, hvad ville du vælge?' },
+            { id: 168, cat: 'Refleksion', title: 'Uanset hvad', theme: 'theme-blue', text: 'Hvad vil du sandsynligvis glemme en dag, men aldrig tilgive?' },
+            { id: 169, cat: 'Hverdag', title: 'Dagens højdepunkt', theme: 'theme-green', text: 'Hvad er det bedste, der er sket for dig i dag?' },
+            { id: 170, cat: 'Relationer', title: 'Første date', theme: 'theme-blue', text: 'Hvad er det mærkeligste, du har gjort på en date?' },
+            { id: 171, cat: 'Refleksion', title: 'Eftermæle', theme: 'theme-blue', text: 'Hvordan vil du gerne huskes?' },
+            { id: 172, cat: 'Hverdag', title: 'Sprog', theme: 'theme-green', text: 'Hvilket sprog ville du ønske, du talte flydende?' },
+            { id: 173, cat: 'Relationer', title: 'Beundring', theme: 'theme-blue', text: 'Hvilken egenskab beundrer du mest hos det menneske, du mindst kan lide?' },
+            { id: 174, cat: 'Hverdag', title: 'Øjeblikkelig lettelse', theme: 'theme-orange', text: 'Hvilke bøger/film/spil får dig altid til at få det bedre, når du er nede?' },
+            { id: 175, cat: 'Refleksion', title: 'Misforståelse', theme: 'theme-red', text: 'Hvilken misforståelse har folk ofte om din aldersgruppe?' },
+            { id: 176, cat: 'Refleksion', title: 'Fysisk ændring', theme: 'theme-red', text: 'Hvis du kunne ændre én ting fysisk ved dig selv, hvad ville det være?' },
+            { id: 177, cat: 'Refleksion', title: 'Bund eller top', theme: 'theme-red', text: 'Hvad føler du, at du enten er helt på bunden eller helt på toppen af lige nu?' },
+            { id: 178, cat: 'Refleksion', title: 'Tilnavn', theme: 'theme-blue', text: 'Mange historiske personer har tilnavne som "Den Store" eller "Den Vise". Hvad skulle dit være?' },
+            { id: 179, cat: 'Hverdag', title: 'Trend', theme: 'theme-orange', text: 'Hvilken trend kan du slet ikke snuppe?' },
+            { id: 180, cat: 'Hverdag', title: 'Yin Yang', theme: 'theme-green', text: 'Hvad forventede du at hade, men endte med at elsket?' },
+            { id: 181, cat: 'Refleksion', title: 'En dag som en anden', theme: 'theme-blue', text: 'Hvis du kunne overtage en anden persons krop for en dag og bare kigge med, hvem ville du vælge?' },
+            { id: 182, cat: 'Refleksion', title: 'Dødsfald', theme: 'theme-red', text: 'Har nogen tæt på dig nogensinde mistet livet? Hvad hjalp dig igennem det?' },
+            { id: 183, cat: 'Refleksion', title: 'Ingen regler', theme: 'theme-blue', text: 'Hvilke kerne-principper har du, som aldrig vil ændre sig?' },
+            { id: 184, cat: 'Hverdag', title: 'Tidsrejse', theme: 'theme-orange', text: 'Hvis du kunne rejse tilbage i tiden og give dit yngre selv ét råd, hvad ville det være?' },
+            { id: 185, cat: 'Refleksion', title: 'Gammel sjæl', theme: 'theme-blue', text: 'Føler du dig ældre eller yngre end din faktiske alder? Hvorfor?' },
+            { id: 186, cat: 'Hverdag', title: 'Transport', theme: 'theme-green', text: 'Hvad er den mærkeligste måde, du nogensinde er blevet transporteret på?' },
+            { id: 187, cat: 'Relationer', title: 'Tillid', theme: 'theme-blue', text: 'Hvad skal der til, for at du stoler 100% på et menneske?' },
+            { id: 188, cat: 'Hverdag', title: 'Internet-pause', theme: 'theme-orange', text: 'Hvad ville du gøre, hvis internettet forsvandt i en uge?' },
+            { id: 189, cat: 'Refleksion', title: 'Største frygt', theme: 'theme-red', text: 'Hvad er din største frygt for fremtiden?' },
+            { id: 190, cat: 'Hverdag', title: 'Dagens opgave', theme: 'theme-green', text: 'Hvad er den kedeligste opgave, du har udført for nylig?' },
+            { id: 191, cat: 'Relationer', title: 'Straf', theme: 'theme-blue', text: 'Hvad skete der sidste gang, du blev straffet? Var det retfærdigt?' },
+            { id: 192, cat: 'Relationer', title: 'Dårligt råd', theme: 'theme-red', text: 'Hvad er det dårligste råd, du nogensinde har fået? Fulgte du det?' },
+            { id: 193, cat: 'Hverdag', title: 'Mini-serier', theme: 'theme-orange', text: 'Hvad er dine top 5 TV-miniserier?' },
+            { id: 194, cat: 'Hverdag', title: 'Duft og minder', theme: 'theme-green', text: 'Hvilke lugte vækker minder? Hvorfor?' },
+            { id: 195, cat: 'Relationer', title: 'Komplimenter', theme: 'theme-blue', text: 'Hvad får du flest komplimenter for?' },
+            { id: 196, cat: 'Refleksion', title: 'Hukommelse', theme: 'theme-blue', text: 'Hvad ville du ønske, du kunne huske bedre?' },
+            { id: 197, cat: 'Relationer', title: 'Skuffelse', theme: 'theme-red', text: 'Hvor ofte føler du, at du skuffer andre?' },
+            { id: 198, cat: 'Hverdag', title: 'Huck', theme: 'theme-orange', text: 'Vil du helst kæmpe mod én and på størrelse med en hest, eller 100 heste på størrelse med en and?' },
+            { id: 199, cat: 'Refleksion', title: 'Ofring', theme: 'theme-red', text: 'Hvad er værd at dø for?' },
+            { id: 200, cat: 'Refleksion', title: 'Latter', theme: 'theme-blue', text: 'Hvornår grinede du sidst virkelig, virkelig meget? Og hvorfor?' },
+            { id: 201, cat: 'Refleksion', title: 'Granat', theme: 'theme-red', text: 'Hvad kunne nogen sige eller gøre for at rømme dette rum øjeblikkeligt?' },
+            { id: 202, cat: 'Refleksion', title: 'Før jeg dør', theme: 'theme-blue', text: 'Hvilke 3 ting vil du nå at udrette, før du dør?' },
+            { id: 203, cat: 'Refleksion', title: 'Stadig flot?', theme: 'theme-blue', text: 'Hvad ville du gerne have, at folk lagde mærke til ved dig som det første?' },
+            { id: 204, cat: 'Refleksion', title: 'Anden chance', theme: 'theme-blue', text: 'Hvis du kunne lave ét øjeblik i dit liv om, hvilket ville det være?' },
+            { id: 205, cat: 'Refleksion', title: 'Hemmelig stolthed', theme: 'theme-blue', text: 'Hvad er du i al hemmelighed stolt af?' },
+            { id: 206, cat: 'Hverdag', title: 'Tidsmaskine', theme: 'theme-orange', text: 'Hvis du havde en tidsmaskine, ville du så helst have en, der kun gik tilbage i tiden eller kun frem?' },
+            { id: 207, cat: 'Hverdag', title: 'Idiot', theme: 'theme-red', text: 'Hvilken situation har fået dig til at føle dig som en idiot?' },
+            { id: 208, cat: 'Refleksion', title: 'Udryddelse', theme: 'theme-red', text: 'Tror du, at menneskeheden vil uddø en dag? Hvis ja, hvornår?' },
+            { id: 209, cat: 'Refleksion', title: 'Skæbnesvanger beslutning', theme: 'theme-blue', text: 'Hvilken enkelt hændelse eller beslutning har haft størst betydning for resten af dit liv?' },
+            { id: 210, cat: 'Refleksion', title: 'Ændring i familien', theme: 'theme-blue', text: 'Hvis du kunne ændre én ting ved din familie, hvad ville det være?' },
+            { id: 211, cat: 'Refleksion', title: 'Fred', theme: 'theme-blue', text: 'Hvad får dig til at føle fred indeni?' },
+            { id: 212, cat: 'Udfordringer', title: 'Bliv sur', theme: 'theme-red', text: 'Brug 90 sekunder på at brokke dig over hvad som helst.' },
+            { id: 213, cat: 'Refleksion', title: 'Accept', theme: 'theme-blue', text: 'Hvad ved dig selv tog det længst tid at acceptere?' },
+            { id: 214, cat: 'Hverdag', title: 'Konspiration', theme: 'theme-orange', text: 'Hvad er din yndlings-konspirationsteori?' },
+            { id: 215, cat: 'Hverdag', title: 'Søvnløshed', theme: 'theme-blue', text: 'Hvad tænker du normalt på, hvis du ikke kan sove? Har du et trick til at falde i søvn?' },
+            { id: 216, cat: 'Refleksion', title: 'Førstehåndsindtryk', theme: 'theme-blue', text: 'Hvad vil du gerne have er det første folk bemærker ved dig?' },
+            { id: 217, cat: 'Refleksion', title: 'Stolthed', theme: 'theme-blue', text: 'Hvad er du hemmeligt stolt af?' },
+            { id: 218, cat: 'Hverdag', title: 'Tidsrejse', theme: 'theme-orange', text: 'Hvis du kunne bruge en tidsmaskine, ville du så helst rejse tilbage eller frem?' },
+            { id: 219, cat: 'Refleksion', title: 'Idiot-følelse', theme: 'theme-red', text: 'Hvilken situation fik dig til at føle dig som en idiot?' },
+            { id: 220, cat: 'Refleksion', title: 'Menneskehedens fremtid', theme: 'theme-red', text: 'Tror du menneskeheden uddør? Hvornår?' },
+            { id: 221, cat: 'Refleksion', title: 'Glidende døre', theme: 'theme-blue', text: 'Hvilken enkelt hændelse eller beslutning har påvirket dit liv mest?' },
+            { id: 222, cat: 'Refleksion', title: 'Familie-ændring', theme: 'theme-blue', text: 'Hvis du kunne ændre én ting ved din familie, hvad skulle det være?' },
+            { id: 223, cat: 'Refleksion', title: 'Indre fred', theme: 'theme-blue', text: 'Hvad får dig til at føle dig i fred?' },
+            { id: 224, cat: 'Refleksion', title: 'Brok', theme: 'theme-red', text: 'Brug 90 sekunder på at brokke dig over hvad som helst.' },
+            { id: 225, cat: 'Refleksion', title: 'Accept af selv', theme: 'theme-blue', text: 'Hvad har det taget dig længst tid at acceptere ved dig selv?' },
+            { id: 226, cat: 'Hverdag', title: 'Konspiration', theme: 'theme-orange', text: 'Hvad er din yndlings-konspirationsteori?' },
+            { id: 227, cat: 'Hverdag', title: 'Søvnløse tanker', theme: 'theme-blue', text: 'Hvis du ikke kan sove, hvad tænker du så på?' },
+            { id: 228, cat: 'Hverdag', title: 'Uovervindelighed', theme: 'theme-orange', text: 'Hvilket sæt tøj får dig til at føle dig uovervindelig?' },
+            { id: 229, cat: 'Hverdag', title: 'Evne-geni', theme: 'theme-orange', text: 'Hvad er noget, du er elendig til, men som du ville ønske, du kunne mestre?' },
+            { id: 230, cat: 'Refleksion', title: 'Bagatel', theme: 'theme-blue', text: 'Hvad er den mest ligegyldige ting, som du alligevel har en stærk holdning til?' },
+            { id: 231, cat: 'Refleksion', title: 'Bekymring', theme: 'theme-red', text: 'Hvad bekymrer dig meget? Hvad ville kunne fikse det?' },
+            { id: 232, cat: 'Refleksion', title: 'Superkraft', theme: 'theme-orange', text: 'Hvilken superkraft ville du foretrække: Evnen til at flyve eller usynlighed?' },
+            { id: 233, cat: 'Relationer', title: 'Har længe villet sige', theme: 'theme-blue', text: 'Hvad vil du gerne sige til nogen, men har ikke gjort endnu? Hvorfor ikke?' },
+            { id: 234, cat: 'Hverdag', title: 'Familie-tradition', theme: 'theme-green', text: 'Hvad er din yndlings-familietradition?' },
+            { id: 235, cat: 'Refleksion', title: 'Et andet sted', theme: 'theme-blue', text: 'Hvor ville du ønske, du var vokset op?' },
+            { id: 236, cat: 'Refleksion', title: 'Pessimisme', theme: 'theme-red', text: 'Er det klogt at være pessimist?' },
+            { id: 237, cat: 'Hverdag', title: 'Vane-bygning', theme: 'theme-green', text: 'Hvilken vane ville du gerne opbygge?' },
+            { id: 238, cat: 'Hverdag', title: 'Vane-brydning', theme: 'theme-red', text: 'Hvilken vane ville du gerne bryde?' },
+            { id: 239, cat: 'Hverdag', title: 'Improvisation', theme: 'theme-green', text: 'Hvad har du improviseret virkelig godt?' },
+            { id: 240, cat: 'Refleksion', title: 'Portaler', theme: 'theme-blue', text: 'Hvis du kunne have en ekstra dør i dit hus, der åbnede til et hvilket som helst sted, hvor skulle den føre hen?' },
+            { id: 241, cat: 'Relationer', title: 'Peer-gruppe', theme: 'theme-blue', text: 'Hvad ville dine venner sige er din mest irriterende vane?' },
+            { id: 242, cat: 'Refleksion', title: 'Ærlighed', theme: 'theme-red', text: 'Hvornår er det okay at lyve?' },
+            { id: 243, cat: 'Refleksion', title: 'Mod', theme: 'theme-blue', text: 'Hvad er den modigste ting, du har set nogen gøre?' },
+            { id: 244, cat: 'Hverdag', title: 'Yndlingslyd', theme: 'theme-green', text: 'Hvad er din yndlingslyd?' },
+            { id: 245, cat: 'Refleksion', title: 'Udfordring', theme: 'theme-red', text: 'Hvad er den største udfordring, du står overfor lige nu?' },
+            { id: 246, cat: 'Relationer', title: 'Inspiration', theme: 'theme-blue', text: 'Hvem inspirerer dig mest i din hverdag?' },
+            { id: 247, cat: 'Refleksion', title: 'Alene', theme: 'theme-red', text: 'Hvad er et dårligt eksempel på at gøre noget alene?' },
+            { id: 248, cat: 'Hverdag', title: 'TV-skræk', theme: 'theme-red', text: 'Hvad er den dårligste TV-serie nogensinde?' },
+            { id: 249, cat: 'Refleksion', title: 'Skurk', theme: 'theme-red', text: 'Hvem er den værste skurk nogensinde?' },
+            { id: 250, cat: 'Refleksion', title: 'Fremtids-mig', theme: 'theme-blue', text: 'Hvad planlægger du at gøre, men kommer sandsynligvis aldrig til det?' },
+            { id: 251, cat: 'Relationer', title: 'Kontrol', theme: 'theme-blue', text: 'Hvis du kunne kontrollere én person i en dag, hvem skulle det være, og hvad ville du gøre?' },
+            { id: 252, cat: 'Refleksion', title: 'Dyr', theme: 'theme-blue', text: 'Hvilket dyr ville du være for en dag?' },
+            { id: 253, cat: 'Hverdag', title: 'Overvurderet film', theme: 'theme-orange', text: 'Hvad er den mest overvurderede film, du har set?' },
+            { id: 254, cat: 'Refleksion', title: 'Gør andre glade', theme: 'theme-green', text: 'Hvilken én ting kunne du gøre for at gøre folk omkring dig gladere?' },
+            { id: 255, cat: 'Refleksion', title: 'Sanser', theme: 'theme-orange', text: 'Ville du foretrække superkraften "zoom-syn" eller "zoom-hørelse"?' },
+            { id: 256, cat: 'Relationer', title: 'Leder', theme: 'theme-blue', text: 'Hvem synes du er en rigtig god leder? Hvad gør vedkommende god?' },
+            { id: 257, cat: 'Refleksion', title: 'Klog eller sjov?', theme: 'theme-red', text: 'Ville du helst være en sjov idiot eller et humørforladt geni?' },
+            { id: 258, cat: 'Hverdag', title: '5 film', theme: 'theme-green', text: 'Hvad er dine top 5 yndlingsfilm?' },
+            { id: 259, cat: 'Hverdag', title: 'Morgen eller aften?', theme: 'theme-blue', text: 'Er du mest til solopgang eller solnedgang?' },
+            { id: 260, cat: 'Refleksion', title: 'Skønhed', theme: 'theme-blue', text: 'Hvad er det smukkeste i verden?' },
+            { id: 261, cat: 'Refleksion', title: 'Nostalgi', theme: 'theme-orange', text: 'Hvad vil du være nostalgisk omkring om 30 år?' },
+            { id: 262, cat: 'Refleksion', title: 'Kultur-chok', theme: 'theme-red', text: 'Har du nogensinde oplevet kultur-chok?' },
+            { id: 263, cat: 'Refleksion', title: 'Det basale', theme: 'theme-blue', text: 'Hvilke 3 ting er de vigtigste i livet?' },
+            { id: 264, cat: 'Refleksion', title: 'Fri vilje', theme: 'theme-blue', text: 'Eksisterer fri vilje?' },
+            { id: 265, cat: 'Relationer', title: 'Tatovering', theme: 'theme-blue', text: 'Hvis du og én anden person skulle have matchende tatoveringer, hvad skulle motivet være, og hvem skulle den anden person være?' },
+            { id: 266, cat: 'Refleksion', title: 'Tankemylder', theme: 'theme-red', text: 'Har du nogle påtrængende tanker, du vil tale om?' },
+            { id: 267, cat: 'Refleksion', title: 'Vold', theme: 'theme-red', text: 'Har du slået nogen for nylig? Havde du lyst til det?' },
+            { id: 268, cat: 'Refleksion', title: 'Klon', theme: 'theme-blue', text: 'Ville du og din klon kunne enes?' },
+            { id: 269, cat: 'Hverdag', title: 'Værste farve', theme: 'theme-red', text: 'Hvad er den værste farve? Hvor så du den sidst?' },
+            { id: 270, cat: 'Relationer', title: 'Byt problemer', theme: 'theme-blue', text: 'Hvad er noget på din to-do liste, som en anden herinde kunne gøre for dig?' },
+            { id: 271, cat: 'Refleksion', title: 'Glemte venner', theme: 'theme-blue', text: 'Hvem er en person, du tænker "hvad mon der skete med ham/hende" om?' },
+            { id: 272, cat: 'Refleksion', title: 'Citroner og limonade', theme: 'theme-blue', text: 'Hvad brokker folk sig over, som vi faktisk er ret heldige med at have?' },
+            { id: 273, cat: 'Refleksion', title: 'Historie', theme: 'theme-blue', text: 'Hvad er din livshistorie på under 2 minutter?' },
+            { id: 274, cat: 'Relationer', title: 'Pinligt', theme: 'theme-blue', text: 'Hvad er noget, du godt kan lide ved en af dem, der lytter med?' },
+            { id: 275, cat: 'Refleksion', title: 'Take two', theme: 'theme-blue', text: 'Hvornår har du sidst øvet dig på, hvad du skulle sige?' },
+            { id: 276, cat: 'Refleksion', title: 'Portaler igen', theme: 'theme-blue', text: 'Hvis du kunne have en ekstra dør i dit hus, der åbnede til et hvilket som helst sted, hvor skulle den føre hen?' },
+            { id: 277, cat: 'Relationer', title: 'Karaoke', theme: 'theme-blue', text: 'Hvor dårligt kan du nynne en sang, så vi stadig kan gætte, hvad det er?' },
+            { id: 278, cat: 'Relationer', title: 'Gamle dage', theme: 'theme-blue', text: 'Hvad er en gammel historie, du har hørt fra en i rummet, som du gerne vil høre mere om?' },
+            { id: 279, cat: 'Refleksion', title: 'Overraskelse', theme: 'theme-blue', text: 'Hvad er det mest overraskende, du har lært om dig selv for nylig?' },
+            { id: 280, cat: 'Refleksion', title: 'Forventning', theme: 'theme-blue', text: 'Hvad glæder du dig mest til i den kommende måned?' },
+            { id: 281, cat: 'Refleksion', title: 'Frygt for succes', theme: 'theme-red', text: 'Er du bange for at få succes?' },
+            { id: 282, cat: 'Hverdag', title: 'Transportmiddel', theme: 'theme-green', text: 'Hvad er dit yndlingstransportmiddel?' },
+            { id: 283, cat: 'Refleksion', title: 'Første minde', theme: 'theme-blue', text: 'Hvad er dit allerførste minde?' },
+            { id: 284, cat: 'Refleksion', title: 'Superkraft', theme: 'theme-orange', text: 'Hvilken superkraft ville være den mest irriterende at have?' },
+            { id: 285, cat: 'Relationer', title: 'Bedste ven', theme: 'theme-blue', text: 'Hvad er den bedste egenskab hos din bedste ven?' },
+            { id: 286, cat: 'Refleksion', title: 'Magisk dør', theme: 'theme-blue', text: 'Hvis du havde en magisk dør, hvor skulle den føre hen?' },
+            { id: 287, cat: 'Refleksion', title: 'Humør', theme: 'theme-blue', text: 'Hvilken sang beskriver bedst dit nuværende humør?' },
+            { id: 288, cat: 'Hverdag', title: 'Madlavning', theme: 'theme-green', text: 'Hvad er din "specialret", når du laver mad?' },
+            { id: 289, cat: 'Refleksion', title: 'Hemmelighed', theme: 'theme-red', text: 'Hvad er noget, du aldrig har fortalt nogen?' },
+            { id: 290, cat: 'Relationer', title: 'Indflydelse', theme: 'theme-blue', text: 'Hvem har haft den største positive indflydelse på dit liv?' },
+            { id: 291, cat: 'Refleksion', title: 'Tidsmaskine', theme: 'theme-orange', text: 'Hvor ville du rejse hen, hvis du havde en tidsmaskine?' },
+            { id: 292, cat: 'Refleksion', title: 'Værdier', theme: 'theme-blue', text: 'Hvad er dine tre vigtigste værdier i livet?' },
+            { id: 293, cat: 'Refleksion', title: 'Udfordring', theme: 'theme-red', text: 'Hvad er den største udfordring, du har overvundet?' },
+            { id: 294, cat: 'Hverdag', title: 'Yndlingsfilm', theme: 'theme-green', text: 'Hvad er din yndlingsfilm gennem tiderne?' },
+            { id: 295, cat: 'Relationer', title: 'Bedste råd', theme: 'theme-blue', text: 'Hvad er det bedste råd, du har givet til en anden?' },
+            { id: 296, cat: 'Refleksion', title: 'Fremtiden', theme: 'theme-blue', text: 'Hvor ser du dig selv om ti år?' },
+            { id: 297, cat: 'Refleksion', title: 'Stolthed', theme: 'theme-blue', text: 'Hvad er du mest stolt af i dit liv indtil nu?' },
+            { id: 298, cat: 'Refleksion', title: 'Lykke', theme: 'theme-blue', text: 'Hvad gør dig virkelig lykkelig?' },
+            { id: 299, cat: 'Refleksion', title: 'Livshistorie', theme: 'theme-blue', text: 'Fortæl din livshistorie på under 2 minutter.' },
+            { id: 300, cat: 'Relationer', title: 'Hvad forstås ikke?', theme: 'theme-blue', text: 'Hvad forstår det modsatte køn ikke ved dit køn?' },
+        ]; 
+
+        let pool = [...allQuestions];
+        let currentIdx = -1;
+        let seen = [];
+
+        function updateCard() {
+            const q = pool[currentIdx];
+            const card = document.getElementById('card');
+            card.style.opacity = 0;
+            card.style.transform = "translateY(10px)";
+            
+            setTimeout(() => {
+                document.getElementById('displayCat').innerText = q.cat;
+                document.getElementById('displayText').innerText = q.text;
+                document.getElementById('displayID').innerText = "#" + q.id;
+                card.className = "card " + q.theme;
+                card.style.opacity = 1;
+                card.style.transform = "translateY(0)";
+                document.getElementById('status').innerText = `Kort ${currentIdx + 1} af ${pool.length}`;
+            }, 200);
+        }
+
+        function shuffle() {
+            if (seen.length === pool.length) seen = [];
+            let r;
+            do { r = Math.floor(Math.random() * pool.length); } 
+            while (seen.includes(r) && pool.length > 1);
+            seen.push(r);
+            currentIdx = r;
+            updateCard();
+        }
+
+        function next() {
+            currentIdx = (currentIdx + 1) % pool.length;
+            updateCard();
+        }
+
+        function prev() {
+            currentIdx = (currentIdx - 1 + pool.length) % pool.length;
+            updateCard();
+        }
+
+        function resetAndFilter() {
+            const val = document.getElementById('catFilter').value;
+            pool = val === 'all' ? [...allQuestions] : allQuestions.filter(q => q.cat === val);
+            currentIdx = -1;
+            seen = [];
+            document.getElementById('displayText').innerText = "Bunken er klar. Træk et kort.";
+            document.getElementById('status').innerText = `Kort 0 af ${pool.length}`;
+        }
+
+        document.getElementById('status').innerText = `Kort 0 af ${allQuestions.length}`;
+    </script>
+</body>
+</html>
