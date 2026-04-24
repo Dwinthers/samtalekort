@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FamilieFokus</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FamilieFokus">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-refleksion: #3498db;
+            --card-droemme: #9b59b6;
+            --card-relationer: #e74c3c;
+            --card-hverdag: #2ecc71;
+            --text-color: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #card-container {
+            width: 85%;
+            max-width: 400px;
+            height: 500px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        #card {
+            width: 100%;
+            height: 100%;
+            background-color: var(--card-refleksion);
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            box-sizing: border-box;
+            text-align: center;
+            transition: transform 0.6s, background-color 0.4s;
+            transform-style: preserve-3d;
+        }
+
+        #category {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            opacity: 0.8;
+            color: var(--text-color);
+        }
+
+        #question-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.4;
+            color: var(--text-color);
+        }
+
+        #footer {
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="card-container" onclick="nextQuestion()">
+        <div id="card">
+            <div id="category">Tryk for at starte</div>
+            <div id="question-text">Er I klar til FamilieFokus?</div>
+        </div>
+    </div>
+
+    <div id="footer">Tryk på kortet for næste spørgsmål</div>
+
+    <script type="module">
+        import questions from './questions.js';
+
+        const card = document.getElementById('card');
+        const categoryLabel = document.getElementById('category');
+        const questionLabel = document.getElementById('question-text');
+
+        const colors = {
+            "Refleksion": "#3498db",
+            "Drømme": "#9b59b6",
+            "Relationer": "#e74c3c",
+            "Hverdag": "#2ecc71"
+        };
+
+        window.nextQuestion = function() {
+            // Tilføj en lille animation
+            card.classList.remove('shake');
+            void card.offsetWidth; // Trigger reflow
+            card.classList.add('shake');
+
+            // Vælg tilfældigt spørgsmål
+            const randomIndex = Math.floor(Math.random() * questions.length);
+            const q = questions[randomIndex];
+
+            // Opdater indhold og farve
+            setTimeout(() => {
+                questionLabel.innerText = q.text;
+                categoryLabel.innerText = q.cat;
+                card.style.backgroundColor = colors[q.cat] || "#34495e";
+            }, 100);
+        };
+    </script>
+</body>
+</html>
