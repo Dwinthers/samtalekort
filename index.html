@@ -7,153 +7,181 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FamilieFokus">
 <meta name="theme-color" content="#0f0d0a">
-<title>FamilieFokus - Samtalekort</title>
+<title>FamilieFokus</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0f0d0a;
-    --surface: #1c1812;
-    --gold: #c9963a;
-    --gold-light: #e8b85a;
-    --cream: #f5ede0;
-    --cream-dim: #d9c9b4;
+    --bg: #0f0d0a; --surface: #1c1812; --gold: #c9963a; --gold-light: #e8b85a; --cream: #f5ede0; --cream-dim: #d9c9b4;
   }
   body {
-    background: var(--bg);
-    color: var(--cream);
-    font-family: 'Lora', serif;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    background: var(--bg); color: var(--cream); font-family: 'Lora', serif;
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
   }
-  header {
-    padding: 60px 20px 20px;
-    text-align: center;
-  }
-  h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.2rem;
-    letter-spacing: 0.2rem;
-    text-transform: uppercase;
-    color: var(--gold);
-  }
-  #scene {
-    flex: 1;
-    perspective: 1200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .card-container {
-    width: 100%;
-    max-width: 340px;
-    height: 480px;
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-  }
+  header { padding: 50px 20px 10px; text-align: center; }
+  h1 { font-family: 'Playfair Display', serif; font-size: 1rem; letter-spacing: 0.3rem; text-transform: uppercase; color: var(--gold); }
+  
+  #scene { flex: 1; perspective: 1200px; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .card-container { width: 100%; max-width: 340px; height: 460px; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
   .card-container.is-flipped { transform: rotateY(180deg); }
-  .card-face {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    border-radius: 20px;
-    display: flex;
-    flex-direction: column;
-    padding: 40px;
-    border: 1px solid rgba(201, 150, 58, 0.3);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-  }
+  .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; padding: 35px; border: 1px solid rgba(201, 150, 58, 0.2); box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
   .card-front { background: var(--surface); justify-content: center; align-items: center; }
   .card-back { background: var(--surface); transform: rotateY(180deg); justify-content: space-between; }
   
-  .card-category { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 0.8rem; letter-spacing: 0.1rem; text-transform: uppercase; }
-  .card-id { color: var(--gold); opacity: 0.5; font-size: 0.8rem; }
-  .card-text { font-size: 1.6rem; line-height: 1.4; color: var(--cream); text-align: center; margin-top: 20px; }
+  .card-category { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 0.75rem; letter-spacing: 0.1rem; text-transform: uppercase; }
+  .card-text { font-size: 1.5rem; line-height: 1.4; color: var(--cream); text-align: center; margin: auto 0; font-weight: 500; }
   
-  .controls {
-    padding: 40px 20px;
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-  }
-  button {
-    background: none;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    padding: 12px 24px;
-    border-radius: 30px;
-    font-family: 'Lora', serif;
-    text-transform: uppercase;
-    letter-spacing: 0.1rem;
-    font-size: 0.7rem;
-    transition: all 0.3s;
-  }
-  button:active { background: var(--gold); color: var(--bg); }
+  .fav-btn { position: absolute; top: 30px; right: 30px; background: none; border: none; color: var(--gold); font-size: 1.5rem; z-index: 10; cursor: pointer; }
+  
+  .bottom-controls { padding: 30px 20px 50px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .nav-arrows { display: flex; align-items: center; gap: 40px; }
+  .arrow { background: none; border: 1px solid rgba(201, 150, 58, 0.4); color: var(--gold); width: 50px; height: 50px; border-radius: 50%; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+  .arrow:active { background: var(--gold); color: var(--bg); }
+  
+  .tool-bar { display: flex; gap: 15px; }
+  .tool-btn { background: rgba(201, 150, 58, 0.1); border: 1px solid rgba(201, 150, 58, 0.2); color: var(--gold); padding: 8px 15px; border-radius: 15px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+  
+  .filter-bar { display: flex; overflow-x: auto; width: 100%; gap: 10px; padding: 10px 20px; scrollbar-width: none; }
+  .filter-chip { flex: 0 0 auto; padding: 6px 15px; border-radius: 20px; border: 1px solid var(--gold); font-size: 0.7rem; color: var(--gold); }
+  .filter-chip.active { background: var(--gold); color: var(--bg); }
 </style>
 </head>
 <body>
-  <header><h1>FamilieFokus</h1></header>
-  <div id="scene">
-    <div class="card-container" id="card" onclick="flipCard()">
-      <div class="card-face card-front">
-        <div class="card-category">Tryk for at se spørgsmål</div>
+
+<header><h1>FamilieFokus</h1></header>
+
+<div class="filter-bar" id="filterBar">
+  <div class="filter-chip active" onclick="setFilter('Alle')">Alle</div>
+  <div class="filter-chip" onclick="setFilter('Refleksion')">Refleksion</div>
+  <div class="filter-chip" onclick="setFilter('Drømme')">Drømme</div>
+  <div class="filter-chip" onclick="setFilter('Relationer')">Relationer</div>
+  <div class="filter-chip" onclick="setFilter('Hverdag')">Hverdag</div>
+</div>
+
+<div id="scene">
+  <div class="card-container" id="card" onclick="flipCard()">
+    <div class="card-face card-front">
+      <div class="card-category" style="opacity:0.5">FamilieFokus</div>
+      <div style="color:var(--gold); font-size: 3rem; margin: 20px 0;">✧</div>
+      <div class="card-category">Tryk for at starte</div>
+    </div>
+    <div class="card-face card-back">
+      <button class="fav-btn" onclick="toggleFav(event)" id="favIcon">♡</button>
+      <div style="display:flex; justify-content: space-between;">
+        <div class="card-category" id="catLabel">Kategori</div>
+        <div class="card-category" id="idLabel">#00</div>
       </div>
-      <div class="card-face card-back" id="cardBack">
-        <div style="display:flex; justify-content: space-between; width: 100%;">
-          <div class="card-category">TALK</div>
-          <div class="card-id" id="cardNumber">#00</div>
-        </div>
-        <div class="card-text" id="questionText">Henter spørgsmål...</div>
-        <div style="height: 20px;"></div>
-      </div>
+      <div class="card-text" id="qText">Spørgsmål...</div>
+      <div class="card-category" style="text-align:center; opacity:0.3">FamilieFokus</div>
     </div>
   </div>
-  <div class="controls">
-    <button onclick="prevCard()">Forrige</button>
-    <button onclick="nextCard()">Næste</button>
+</div>
+
+<div class="bottom-controls">
+  <div class="nav-arrows">
+    <button class="arrow" onclick="go(-1)">←</button>
+    <button class="arrow" onclick="go(1)">→</button>
   </div>
+  <div class="tool-bar">
+    <button class="tool-btn" onclick="shuffleDeck()">Shuffle</button>
+    <button class="tool-btn" onclick="resetDeck()">Retur</button>
+    <button class="tool-btn" onclick="showFavsOnly()" id="favToggleBtn">Favoritter</button>
+  </div>
+</div>
 
-  <script type="module">
-    // 1. Hent spørgsmålene fra filen
-    import questions from './questions.js';
+<script type="module">
+  import questions from './questions.js';
 
-    let currentIndex = 0;
-    const cardElement = document.getElementById('card');
-    const questionText = document.getElementById('questionText');
-    const cardNumber = document.getElementById('cardNumber');
+  let deck = [...questions];
+  let currentIndex = 0;
+  let favorites = JSON.parse(localStorage.getItem('ff_favs')) || [];
+  let currentFilter = 'Alle';
+  let showingFavs = false;
 
-    function updateCard() {
-      cardElement.classList.remove('is-flipped');
-      setTimeout(() => {
-        const q = questions[currentIndex];
-        questionText.innerText = q.text;
-        cardNumber.innerText = '#' + q.id;
-      }, 150);
+  const card = document.getElementById('card');
+  const qText = document.getElementById('qText');
+  const catLabel = document.getElementById('catLabel');
+  const idLabel = document.getElementById('idLabel');
+  const favIcon = document.getElementById('favIcon');
+
+  window.flipCard = () => card.classList.toggle('is-flipped');
+
+  window.setFilter = (cat) => {
+    currentFilter = cat;
+    showingFavs = false;
+    document.querySelectorAll('.filter-chip').forEach(el => {
+      el.classList.toggle('active', el.innerText === cat);
+    });
+    applyFilters();
+  };
+
+  function applyFilters() {
+    let tempDeck = [...questions];
+    if (currentFilter !== 'Alle') tempDeck = tempDeck.filter(q => q.cat === currentFilter);
+    if (showingFavs) tempDeck = tempDeck.filter(q => favorites.includes(q.id));
+    
+    deck = tempDeck;
+    currentIndex = 0;
+    updateUI();
+  }
+
+  window.go = (dir) => {
+    if (deck.length === 0) return;
+    card.classList.remove('is-flipped');
+    setTimeout(() => {
+      currentIndex = (currentIndex + dir + deck.length) % deck.length;
+      updateUI();
+    }, 150);
+  };
+
+  window.shuffleDeck = () => {
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
     }
+    currentIndex = 0;
+    updateUI();
+  };
 
-    // 2. Vi gør funktionerne globale, så knapperne (onclick) kan finde dem
-    window.flipCard = function() {
-      cardElement.classList.toggle('is-flipped');
+  window.resetDeck = () => {
+    currentFilter = 'Alle';
+    showingFavs = false;
+    setFilter('Alle');
+  };
+
+  window.showFavsOnly = () => {
+    showingFavs = !showingFavs;
+    document.getElementById('favToggleBtn').style.background = showingFavs ? 'var(--gold)' : '';
+    document.getElementById('favToggleBtn').style.color = showingFavs ? 'var(--bg)' : '';
+    applyFilters();
+  };
+
+  window.toggleFav = (e) => {
+    e.stopPropagation();
+    const q = deck[currentIndex];
+    if (favorites.includes(q.id)) {
+      favorites = favorites.filter(id => id !== q.id);
+    } else {
+      favorites.push(q.id);
     }
+    localStorage.setItem('ff_favs', JSON.stringify(favorites));
+    updateUI();
+  };
 
-    window.nextCard = function() {
-      currentIndex = (currentIndex + 1) % questions.length;
-      updateCard();
+  function updateUI() {
+    if (deck.length === 0) {
+      qText.innerText = "Ingen spørgsmål fundet i denne kategori.";
+      idLabel.innerText = "#00";
+      return;
     }
+    const q = deck[currentIndex];
+    qText.innerText = q.text;
+    catLabel.innerText = q.cat || "TALK";
+    idLabel.innerText = "#" + q.id;
+    favIcon.innerText = favorites.includes(q.id) ? "♥" : "♡";
+  }
 
-    window.prevCard = function() {
-      currentIndex = (currentIndex - 1 + questions.length) % questions.length;
-      updateCard();
-    }
-
-    // 3. Start appen
-    updateCard();
-  </script>
+  updateUI();
+</script>
 </body>
 </html>
