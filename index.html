@@ -119,8 +119,10 @@
     <button onclick="nextCard()">Næste</button>
   </div>
 
-  <script src="questions.js"></script>
-  <script>
+  <script type="module">
+    // 1. Hent spørgsmålene fra filen
+    import questions from './questions.js';
+
     let currentIndex = 0;
     const cardElement = document.getElementById('card');
     const questionText = document.getElementById('questionText');
@@ -135,22 +137,23 @@
       }, 150);
     }
 
-    function flipCard() {
+    // 2. Vi gør funktionerne globale, så knapperne (onclick) kan finde dem
+    window.flipCard = function() {
       cardElement.classList.toggle('is-flipped');
     }
 
-    function nextCard() {
+    window.nextCard = function() {
       currentIndex = (currentIndex + 1) % questions.length;
       updateCard();
     }
 
-    function prevCard() {
+    window.prevCard = function() {
       currentIndex = (currentIndex - 1 + questions.length) % questions.length;
       updateCard();
     }
 
-    // Start
-    window.onload = updateCard;
+    // 3. Start appen
+    updateCard();
   </script>
 </body>
 </html>
